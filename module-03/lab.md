@@ -29,8 +29,9 @@ under `outputs/`.
    uv pip install "smolagents[toolkit]==1.26.0" "huggingface_hub>=1.0,<2" "pandas>=2.2.3" matplotlib
    cp module-03/.env.example module-03/.env   # then add your HF token; never commit .env
    ```
-   `[toolkit]` provides `ddgs>=9.0.0` (for `WebSearchTool`, *not* the old `duckduckgo-search`
-   package — it was renamed upstream) and `markdownify>=0.14.1` (for `VisitWebpageTool`).
+   `[toolkit]` provides `ddgs>=9.0.0` (for `DuckDuckGoSearchTool`, *not* the old
+   `duckduckgo-search` package — it was renamed upstream; `WebSearchTool` itself uses
+   `requests`) and `markdownify>=0.14.1` (for `VisitWebpageTool`).
 
 2. **`load_dataset` via `@tool`** (`quill/tools/data.py`) — frozen signature
    `load_dataset(path: str) -> str`. The `@tool` decorator derives the tool's schema from the

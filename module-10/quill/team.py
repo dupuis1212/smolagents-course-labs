@@ -132,8 +132,8 @@ def build_web_researcher(
     return ToolCallingAgent(
         # The dispatcher's toolset: search the web, then read a page. Exactly ONE web-search tool
         # (web_search), per 06 §6. The FinalAnswerTool is added automatically (it is how the
-        # sub-agent returns its summary), and for a ToolCallingAgent the python_interpreter tool
-        # is included by the library — we do NOT pass add_base_tools (we want a focused toolset).
+        # sub-agent returns its summary). We do NOT pass add_base_tools, so the toolset stays
+        # focused: exactly {web_search, visit_webpage, final_answer} — no python_interpreter.
         tools=[WebSearchTool(), VisitWebpageTool()],
         # M4 frozen contract: the model comes from make_model — never an InferenceClientModel built
         # here, never HfApiModel. role="researcher" is forwarded for a future per-role swap.

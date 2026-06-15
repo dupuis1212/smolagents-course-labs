@@ -55,7 +55,7 @@ The whole suite runs **offline** with no token or network: a deterministic `Fake
 ```bash
 # offline: every module, no token needed
 uv run pytest $(for n in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15; do echo module-$n/tests; done) -q
-# -> 1881 passed, 126 skipped
+# -> 1891 passed, 126 skipped
 
 QUILL_LIVE_TESTS=1   uv run pytest ...   # also run real-LLM tests (needs HF_TOKEN)
 QUILL_SANDBOX_TESTS=1 uv run pytest ...  # also run Docker-sandbox tests (needs a free port 8888)

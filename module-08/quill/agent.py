@@ -175,7 +175,8 @@ def build_quill(
     The toolbox:
     - ``load_dataset`` / ``profile_dataframe`` (``@tool`` functions) and ``save_chart``
       (a ``Tool`` subclass — note ``save_chart()``: it is instantiated here).
-    - ``WebSearchTool()`` (engine="duckduckgo" by default, needs ``ddgs`` from ``[toolkit]``)
+    - ``WebSearchTool()`` (engine="duckduckgo" by default; fetches via ``requests`` — it does
+      NOT use ``ddgs``; that package is only for the separate ``DuckDuckGoSearchTool``)
       and ``VisitWebpageTool()`` for fetching context off the web.
 
     The returned ``CodeAgent`` supports the context-manager protocol

@@ -387,13 +387,21 @@ def run_quill_in_e2b_sandbox(
     package_root = pathlib.Path(quill_package_dir or pathlib.Path(__file__).resolve().parents[1])
     sandbox = Sandbox()  # the E2B sandbox IS the isolation boundary (Approach 2)
     try:
-        # Upload the quill package + dataset into the sandbox, then run the whole team inside it.
+        # Upload the quill package + ALL of data/ into the sandbox, then run the whole team inside
+        # it. data/ must ship in full (mirrors the Docker tar path): the dataset, AND the M12 docs
+        # corpus the RetrieverTool indexes — build_quill defaults retrieve=True, so a missing
+        # data/corpus/ would silently degrade the agentic-RAG capability the architecture shows
+        # running inside the sandbox.
         for path in (package_root / "quill").rglob("*.py"):
             rel = path.relative_to(package_root)
             sandbox.files.write(str(rel), path.read_text(encoding="utf-8"))
-        dataset_path = package_root / dataset
-        if dataset_path.exists():
-            sandbox.files.write(dataset, dataset_path.read_text(encoding="utf-8"))
+        data_dir = package_root / "data"
+        if data_dir.exists():
+            # Write as BYTES so binary files (e.g. sales.db) survive intact.
+            for path in data_dir.rglob("*"):
+                if path.is_file():
+                    rel = path.relative_to(package_root)
+                    sandbox.files.write(str(rel), path.read_bytes())
         sandbox.commands.run(
             "pip install 'smolagents[toolkit]==1.26.0' 'huggingface_hub>=1.0,<2' "
             "'pandas>=2.2.3' matplotlib rank-bm25",

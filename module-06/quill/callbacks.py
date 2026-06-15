@@ -55,15 +55,25 @@ PRUNE_MARKER = "[pruned: large DataFrame dump removed to save tokens]"
 
 
 def prune_old_observations(memory_step: ActionStep, agent) -> None:
-    """Null out big observations from steps older than ``KEEP_LAST`` — a ``step_callback``.
+    """Null out big observations from all but the last ``KEEP_LAST`` steps — a ``step_callback``.
 
     Signature is the frozen smolagents callback shape ``(memory_step, agent)``. It is called
     after each step (from ``_finalize_step``); at that point ``memory_step`` is the step that
-    JUST finished and ``agent.memory.steps`` holds the steps BEFORE it. We walk those prior
-    steps and, for any ``ActionStep`` that is now more than ``KEEP_LAST`` steps behind the
-    current one and whose ``observations`` exceed ``MAX_OBS_CHARS``, replace the body with
-    ``PRUNE_MARKER``. The next ``write_memory_to_messages()`` then sends the marker, not the
-    multi-kB dump — that is where the token saving actually happens.
+    JUST finished and ``agent.memory.steps`` holds the steps BEFORE it, in order. We keep the
+    most recent ``KEEP_LAST`` ``ActionStep``s verbatim (``memory_step`` plus the last
+    ``KEEP_LAST - 1`` prior ones) and, for any older ``ActionStep`` whose ``observations``
+    exceed ``MAX_OBS_CHARS``, replace the body with ``PRUNE_MARKER``. The next
+    ``write_memory_to_messages()`` then sends the marker, not the multi-kB dump — that is where
+    the token saving actually happens.
+
+    Age is measured by **position in ``agent.memory.steps``**, NOT by ``step_number``. This is
+    the subtle, load-bearing choice: ``run(reset=False)`` restarts ``step_number`` at 1 every
+    turn (smolagents resets it at the top of each run — see its own "there can be steps from
+    previous runs" comment), so a previous turn's steps keep small numbers. Keying on the
+    number would compute a negative/tiny gap for those steps and skip them — leaving a prior
+    turn's fat dumps in memory forever, which is the exact long multi-turn session this
+    callback exists to keep cheap. The order of the list, by contrast, is always globally
+    monotonic across turns, so list position is the true age.
 
     We mutate ``observations`` in place (the canonical smolagents pattern, generalised from
     the vision browser's ``save_screenshot`` callback which prunes ``observations_images``).
@@ -76,15 +86,16 @@ def prune_old_observations(memory_step: ActionStep, agent) -> None:
     if not isinstance(memory_step, ActionStep):
         return
 
-    current = memory_step.step_number
-    for step in agent.memory.steps:
-        if not isinstance(step, ActionStep) or step is memory_step:
-            continue
-        # "older than KEEP_LAST steps behind": gap from the current step number. A reset=False
-        # turn restarts step_number, so prior-turn steps have small numbers and are pruned too
-        # (their big dumps are exactly what we want gone once a new turn is underway).
-        if current - step.step_number < KEEP_LAST:
-            continue
+    # Prior ActionSteps, in memory order (oldest first). memory_step is normally not in this
+    # list yet, but we exclude it defensively in case the finalize/append order ever changes.
+    prior_action_steps = [
+        step for step in agent.memory.steps
+        if isinstance(step, ActionStep) and step is not memory_step
+    ]
+    # Keep the tail (the last KEEP_LAST-1 prior steps, which together with memory_step are the
+    # last KEEP_LAST action steps); everything before that index is "old" and gets pruned.
+    keep_from = max(0, len(prior_action_steps) - (KEEP_LAST - 1))
+    for step in prior_action_steps[:keep_from]:
         observations = step.observations
         if observations is not None and len(observations) > MAX_OBS_CHARS and observations != PRUNE_MARKER:
             step.observations = PRUNE_MARKER

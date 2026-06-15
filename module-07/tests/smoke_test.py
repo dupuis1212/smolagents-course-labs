@@ -434,11 +434,14 @@ def test_prune_keeps_recent_steps_and_prunes_an_old_big_observation():
 
 
 def test_prune_leaves_small_observations_alone():
-    """Below MAX_OBS_CHARS, an old observation is cheap and sometimes the only record — keep it."""
+    """Below MAX_OBS_CHARS, an old observation is cheap and sometimes the only record — keep it.
+    `old` is genuinely out of the keep window (a bigger recent step sits after it), so the only
+    reason it survives is the size guard."""
     small = "Loaded sales.csv: 108 rows x 6 columns."  # well under MAX_OBS_CHARS
     old = _action_step(1, observations=small)
-    current = _action_step(1 + KEEP_LAST + 1)
-    agent = _FakeAgent([old])
+    recent = _action_step(2, observations="y" * (MAX_OBS_CHARS + 1))  # pushes `old` out of the window
+    current = _action_step(3)
+    agent = _FakeAgent([old, recent])
 
     prune_old_observations(current, agent)
 
@@ -474,13 +477,40 @@ def test_prune_is_idempotent():
     """Running the callback twice does not double-mark or re-grow the observation."""
     big = "q" * (MAX_OBS_CHARS + 10)
     old = _action_step(1, observations=big)
-    current = _action_step(1 + KEEP_LAST + 1)
-    agent = _FakeAgent([old])
+    recent = _action_step(2, observations="r" * (MAX_OBS_CHARS + 1))  # keeps `old` out of the window
+    current = _action_step(3)
+    agent = _FakeAgent([old, recent])
 
     prune_old_observations(current, agent)
     prune_old_observations(current, agent)
 
     assert old.observations == PRUNE_MARKER
+
+
+def test_prune_works_across_a_reset_false_turn_boundary():
+    """REGRESSION (the headline multi-turn case): on a reset=False turn, smolagents restarts
+    step_number at 1, so a previous turn's steps keep small numbers. Pruning must key on LIST
+    POSITION, not step_number — otherwise turn 1's fat dumps (exactly what this callback
+    promises to drop on a long session) survive forever. This test FAILS under step_number
+    arithmetic and passes under position-based pruning."""
+    big = "d" * (MAX_OBS_CHARS + 1)
+    # Turn 1 left two ActionSteps in memory, numbered 1 and 2, each with a big dump...
+    turn1_a = _action_step(1, observations=big)
+    turn1_b = _action_step(2, observations=big)
+    # ...then turn 2 (reset=False) RESTARTS numbering: its first ActionStep is number 1 again,
+    # and `current` (just finished) is turn 2's second step — number 2 again.
+    turn2_first = _action_step(1, observations=big)
+    current = _action_step(2)
+    agent = _FakeAgent([turn1_a, turn1_b, turn2_first])
+
+    prune_old_observations(current, agent)
+
+    # Turn 1's dumps ARE pruned even though their numbers (1, 2) are not "KEEP_LAST behind" the
+    # current number (2): position in memory.steps is the real age.
+    assert turn1_a.observations == PRUNE_MARKER
+    assert turn1_b.observations == PRUNE_MARKER
+    # The most recent prior step (turn 2's first) is within KEEP_LAST → kept verbatim.
+    assert turn2_first.observations == big
 
 
 def test_log_step_cost_is_quiet_and_safe_when_token_usage_is_none(capsys):
