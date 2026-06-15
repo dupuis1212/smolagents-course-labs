@@ -1,0 +1,46 @@
+[project]
+name = "smolagents-course-labs-module-11"
+version = "0.1.0"
+description = "Module 11 — Vision & multimodal: Quill re-reads its own charts with a VLM via run(images=...) and gains an optional vision_browser sub-agent (helium+selenium); the [vision] extra is a BROWSER, not image input"
+requires-python = ">=3.11"
+dependencies = [
+  # Core: CodeAgent + default tools (ddgs>=9.0.0, markdownify>=0.14.1 from [toolkit]).
+  # [litellm]/[openai] (M4) add the model swap backends.
+  # [docker] (M5) adds DockerExecutor (docker>=7.1.0 + websocket-client) for real
+  # isolation via executor_type="docker". Optionally add [e2b] for the E2B cloud microVM swap.
+  # [mcp] (M9) adds the MCP client bridge (mcpadapt>=0.1.13 + mcp) so Quill can connect to
+  # MCP tool servers via ToolCollection.from_mcp / MCPClient.
+  # [vision] (NEW, M11) adds helium + selenium — the BROWSER for the OPTIONAL vision_browser
+  # sub-agent. NOTE (the T11.4 trap): [vision] does NOT enable image INPUT — re-reading a chart
+  # via run(images=...) needs only a VLM (a model_id via make_model/QUILL_MODEL_ID) and PIL, no
+  # extra. We pull [vision] in here so the optional browser + its offline tests are reproducible.
+  "smolagents[toolkit,litellm,openai,docker,mcp,vision]==1.26.0",
+  "huggingface_hub>=1.0,<2",
+  # Quill's data stack — neither is a smolagents dependency, so both are added explicitly.
+  # Pillow ships with the data/vision stack; it is what decodes a chart PNG to a PIL image for
+  # run(images=[...]) — no extra needed for image INPUT.
+  "pandas>=2.2.3",
+  "matplotlib",
+  # Floors that match smolagents 1.26.0's extras (pinned for reproducibility).
+  "litellm>=1.60.2",       # M4: the LiteLLM swap backend
+  "openai>=1.58.1",        # M4 (optional): OpenAI-compatible servers
+  "docker>=7.1.0",         # M5: Docker SDK used by DockerExecutor
+  "mcpadapt>=0.1.13",      # M9: the MCP <-> smolagents Tool bridge (from [mcp])
+  "helium",                # NEW (M11): browser automation for the vision_browser (from [vision])
+  "selenium",              # NEW (M11): the WebDriver helium drives (Chrome) (from [vision])
+  # "e2b-code-interpreter>=1.0.3",  # OPTIONAL (M5): uncomment for QUILL_EXECUTOR=e2b
+  # Tests
+  "pytest>=8.1.0",
+]
+
+# The OPTIONAL vision_browser needs a real local Chrome in addition to helium+selenium (install it
+# on the host; it is not a pip package). `uvx` (used to launch the stdio MCP SQLite server,
+# mcp-server-sqlite) ships with `uv` — it is NOT a Python package dependency, so it is not listed
+# here. Extras still NOT pulled in yet: no gradio (M13), no telemetry (M14). The repo uses ONE
+# shared venv; each module-NN/ is a self-contained snapshot of code + tests + data. uv.lock is
+# committed at the repo root.
+#
+# Pytest config (markers, rootdir, the shared FakeModel/fake_model fixture, and the
+# live/sandbox skip policy) lives at the REPO ROOT (pyproject.toml + conftest.py). We do
+# NOT add a [tool.pytest.ini_options] section here: that would make module-09/ a competing
+# rootdir and stop pytest from discovering the root conftest. Run tests from the repo root.

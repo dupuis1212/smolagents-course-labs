@@ -1,0 +1,43 @@
+[project]
+name = "smolagents-course-labs"
+version = "0.1.0"
+description = "Labs for the smolagents Mastery course — building Quill, a code-first data-analyst agent"
+requires-python = ">=3.11"
+dependencies = [
+  # Core (Modules 1-3): CodeAgent/ToolCallingAgent + default tools (ddgs + markdownify).
+  # M4 layers in [litellm] (LiteLLMModel swap) + [openai] (OpenAI-compatible servers).
+  # M5 layers in [docker] (DockerExecutor: docker>=7.1.0 + websocket-client) for sandboxing.
+  "smolagents[toolkit,litellm,openai,docker]==1.26.0",
+  "huggingface_hub>=1.0,<2",
+  # Quill's data stack (Module 2+)
+  "pandas>=2.2.3",
+  "matplotlib",
+  # Model swap backends (Module 4)
+  "litellm>=1.60.2",
+  "openai>=1.58.1",
+  # RAG retriever (Module 12)
+  "rank-bm25",
+  # Tests
+  "pytest>=8.1.0",
+]
+
+# Extras are layered into the same venv as later modules need them:
+#   M4 swap      : smolagents[litellm,openai]   (NOW INCLUDED above)
+#   M5 sandbox   : smolagents[docker]  (and/or [e2b])
+#   M9 MCP       : smolagents[mcp]
+#   M11 vision   : smolagents[vision]
+#   M13 UI       : smolagents[gradio]
+#   M14 telemetry: smolagents[telemetry]
+# Single-env note: the course uses ONE venv for the whole labs repo; each module-NN/
+# directory is a self-contained snapshot of code + tests + data, sharing this environment.
+
+[tool.pytest.ini_options]
+# importlib mode lets the cumulative suite collect every module's tests/smoke_test.py at
+# once: each module-NN/tests/smoke_test.py shares that basename, which the legacy "prepend"
+# mode rejects (sys.path name clash). importlib imports each file by its full path, so
+# `uv run pytest module-01/tests module-02/tests ...` from the repo root works as the CI does.
+addopts = "--import-mode=importlib"
+markers = [
+  "live: hits a real LLM/network (needs HF_TOKEN; skipped unless QUILL_LIVE_TESTS=1)",
+  "sandbox: needs Docker/E2B (skipped if unavailable)",
+]

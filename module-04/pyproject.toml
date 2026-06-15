@@ -1,0 +1,29 @@
+[project]
+name = "smolagents-course-labs-module-04"
+version = "0.1.0"
+description = "Module 4 — Quill gains make_model(): one env-driven model factory + token cost in plain sight"
+requires-python = ">=3.11"
+dependencies = [
+  # Core: CodeAgent + default tools (ddgs>=9.0.0, markdownify>=0.14.1 from [toolkit]).
+  # [litellm] (NEW, M4) adds the LiteLLMModel backend (100+ providers via "<provider>/<model>");
+  # [openai] (NEW, M4) is optional, for OpenAI-compatible servers / gpt-4o testing.
+  "smolagents[toolkit,litellm,openai]==1.26.0",
+  "huggingface_hub>=1.0,<2",
+  # Quill's data stack — neither is a smolagents dependency, so both are added explicitly.
+  "pandas>=2.2.3",
+  "matplotlib",
+  # Floors that match smolagents 1.26.0's extras (pinned for reproducibility).
+  "litellm>=1.60.2",  # NEW (M4): the LiteLLM swap backend
+  "openai>=1.58.1",   # NEW (M4, optional): OpenAI-compatible servers
+  # Tests
+  "pytest>=8.1.0",
+]
+
+# Extras still NOT pulled in yet: no docker/e2b (M5), no mcp (M9), no gradio (M13),
+# no vision (M11), no telemetry (M14). The repo uses ONE shared venv; each module-NN/ is a
+# self-contained snapshot of code + tests + data. uv.lock is committed at the repo root.
+#
+# Pytest config (markers, rootdir, the shared FakeModel/fake_model fixture, and the
+# live/sandbox skip policy) lives at the REPO ROOT (pyproject.toml + conftest.py). We do
+# NOT add a [tool.pytest.ini_options] section here: that would make module-04/ a competing
+# rootdir and stop pytest from discovering the root conftest. Run tests from the repo root.

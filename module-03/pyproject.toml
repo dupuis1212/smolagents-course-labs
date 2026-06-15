@@ -1,0 +1,26 @@
+[project]
+name = "smolagents-course-labs-module-03"
+version = "0.1.0"
+description = "Module 3 — Quill gains a reusable, frozen data toolbox (@tool + Tool) plus web access"
+requires-python = ">=3.11"
+dependencies = [
+  # Core: CodeAgent + default tools. WebSearchTool needs ddgs; VisitWebpageTool needs
+  # markdownify — both ship with [toolkit] (ddgs>=9.0.0, markdownify>=0.14.1).
+  "smolagents[toolkit]==1.26.0",
+  "huggingface_hub>=1.0,<2",
+  # Quill's data stack — neither is a smolagents dependency, so both are added explicitly.
+  "pandas>=2.2.3",
+  "matplotlib",  # NEW (M3): save_chart needs it; smolagents does NOT pull it in
+  # Tests
+  "pytest>=8.1.0",
+]
+
+# No downstream extras yet: no litellm/openai (M4), no docker/e2b (M5), no mcp (M9),
+# no gradio (M13), no vision (M11), no telemetry (M14). The repo uses ONE shared venv;
+# each module-NN/ is a self-contained snapshot of code + tests + data. uv.lock is committed
+# at the repo root.
+#
+# Pytest config (markers, rootdir, the shared FakeModel/fake_model fixture, and the
+# live/sandbox skip policy) lives at the REPO ROOT (pyproject.toml + conftest.py). We do
+# NOT add a [tool.pytest.ini_options] section here: that would make module-03/ a competing
+# rootdir and stop pytest from discovering the root conftest. Run tests from the repo root.

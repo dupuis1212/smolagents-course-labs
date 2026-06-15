@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+outputs/
+**/outputs/
+*.png
+# M14: the eval harness outputs (run-<name>.json) are regenerable — keep the dir, ignore the runs.
+eval/results/*
+**/eval/results/*
+!**/eval/results/.gitkeep
+# M9: local output of `save_chart.save(...)` / `push_save_chart` (a regenerable artifact).
+build/
+**/build/
+# M13: the GradioUI file_upload_folder — keep the folder (.gitkeep), ignore user-uploaded files.
+**/uploads/*
+!**/uploads/.gitkeep
+.DS_Store

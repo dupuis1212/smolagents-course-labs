@@ -1,0 +1,24 @@
+[project]
+name = "smolagents-course-labs-module-02"
+version = "0.1.0"
+description = "Module 2 — Quill v0: a CodeAgent that answers a question about a CSV by writing pandas"
+requires-python = ">=3.11"
+dependencies = [
+  # Core: CodeAgent + default tools (ddgs + markdownify via [toolkit])
+  "smolagents[toolkit]==1.26.0",
+  "huggingface_hub>=1.0,<2",
+  # Quill's data stack — pandas is NOT a smolagents dependency, so it is added explicitly.
+  "pandas>=2.2.3",
+  # Tests
+  "pytest>=8.1.0",
+]
+
+# No downstream extras yet: no litellm/openai (M4), no docker/e2b (M5), no mcp (M9),
+# no gradio (M13), no vision (M11), no telemetry (M14). The repo uses ONE shared venv;
+# each module-NN/ is a self-contained snapshot of code + tests + data. uv.lock is committed
+# at the repo root.
+#
+# Pytest config (markers, rootdir, the shared FakeModel/fake_model fixture, and the
+# live/sandbox skip policy) lives at the REPO ROOT (pyproject.toml + conftest.py). We do
+# NOT add a [tool.pytest.ini_options] section here: that would make module-02/ a competing
+# rootdir and stop pytest from discovering the root conftest. Run tests from the repo root.

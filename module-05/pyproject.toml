@@ -1,0 +1,32 @@
+[project]
+name = "smolagents-course-labs-module-05"
+version = "0.1.0"
+description = "Module 5 — Quill runs in a sandbox: resolve_executor() (QUILL_EXECUTOR), locked imports, blocked import + loop cap"
+requires-python = ">=3.11"
+dependencies = [
+  # Core: CodeAgent + default tools (ddgs>=9.0.0, markdownify>=0.14.1 from [toolkit]).
+  # [litellm]/[openai] (M4) add the model swap backends.
+  # [docker] (NEW, M5) adds DockerExecutor (docker>=7.1.0 + websocket-client) for real
+  # isolation via executor_type="docker". Optionally add [e2b] for the E2B cloud microVM swap.
+  "smolagents[toolkit,litellm,openai,docker]==1.26.0",
+  "huggingface_hub>=1.0,<2",
+  # Quill's data stack — neither is a smolagents dependency, so both are added explicitly.
+  "pandas>=2.2.3",
+  "matplotlib",
+  # Floors that match smolagents 1.26.0's extras (pinned for reproducibility).
+  "litellm>=1.60.2",       # M4: the LiteLLM swap backend
+  "openai>=1.58.1",        # M4 (optional): OpenAI-compatible servers
+  "docker>=7.1.0",         # NEW (M5): Docker SDK used by DockerExecutor
+  # "e2b-code-interpreter>=1.0.3",  # OPTIONAL (M5): uncomment for QUILL_EXECUTOR=e2b
+  # Tests
+  "pytest>=8.1.0",
+]
+
+# Extras still NOT pulled in yet: no mcp (M9), no gradio (M13), no vision (M11),
+# no telemetry (M14). The repo uses ONE shared venv; each module-NN/ is a self-contained
+# snapshot of code + tests + data. uv.lock is committed at the repo root.
+#
+# Pytest config (markers, rootdir, the shared FakeModel/fake_model fixture, and the
+# live/sandbox skip policy) lives at the REPO ROOT (pyproject.toml + conftest.py). We do
+# NOT add a [tool.pytest.ini_options] section here: that would make module-05/ a competing
+# rootdir and stop pytest from discovering the root conftest. Run tests from the repo root.

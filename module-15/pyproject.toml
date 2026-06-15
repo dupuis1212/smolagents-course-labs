@@ -1,0 +1,76 @@
+[project]
+name = "smolagents-course-labs-module-15"
+version = "1.0.0"
+description = "Module 15 (capstone) — ship Quill v1.0: run the WHOLE multi-agent system inside a sandbox (Approach 2, quill/runtime.py — a remote executor_type + managed_agents raises, so Approach 1 cannot do multi-agent), harden it (bounded max_steps, retries <= 2, idempotent save_chart paths, Docker resource limits), keep telemetry + the eval gate on, expose a Gradio Space, and tag v1.0. Assembly + hardening only — no new feature"
+requires-python = ">=3.11"
+dependencies = [
+  # Core: CodeAgent + default tools (ddgs>=9.0.0, markdownify>=0.14.1 from [toolkit]).
+  # [litellm]/[openai] (M4) add the model swap backends.
+  # [docker] (M5) adds DockerExecutor (docker>=7.1.0 + websocket-client) for real
+  # isolation via executor_type="docker". Optionally add [e2b] for the E2B cloud microVM swap.
+  # [mcp] (M9) adds the MCP client bridge (mcpadapt>=0.1.13 + mcp) so Quill can connect to
+  # MCP tool servers via ToolCollection.from_mcp / MCPClient.
+  # [vision] (M11) adds helium + selenium — the BROWSER for the OPTIONAL vision_browser
+  # sub-agent. NOTE (the T11.4 trap): [vision] does NOT enable image INPUT — re-reading a chart
+  # via run(images=...) needs only a VLM (a model_id via make_model/QUILL_MODEL_ID) and PIL, no
+  # extra. We pull [vision] in here so the optional browser + its offline tests are reproducible.
+  # [gradio] (M13) adds gradio>=5.14.0 — the GradioUI / stream_to_gradio web layer (06 §4). It is
+  # what wraps Quill as a web app and what agent.push_to_hub exports as the Space app.py.
+  # [telemetry] (M14) adds arize-phoenix + opentelemetry-sdk + opentelemetry-exporter-otlp +
+  # openinference-instrumentation-smolagents>=0.1.15 (06 §4) — the OpenTelemetry/OpenInference
+  # tracing stack. SmolagentsInstrumentor().instrument() (quill/telemetry.py) feeds Langfuse OR
+  # Phoenix from the SAME instrumentor. NOTE (telemetry semantic conventions are still evolving as
+  # of smolagents 1.26.0 — re-verify the instrumentation version at build time). For a Langfuse-only
+  # setup you can install openinference-instrumentation-smolagents ALONE (skip arize-phoenix) and add
+  # `langfuse` (commented below).
+  # M15 (capstone): the FULL course environment (06 §4). [e2b] is added so the Approach-2 E2B
+  # backend (quill/runtime.run_quill_in_e2b_sandbox) is reproducible alongside the Docker default.
+  "smolagents[toolkit,litellm,openai,e2b,docker,mcp,vision,gradio,telemetry]==1.26.0",
+  # huggingface_hub powers the agent-level push_to_hub / from_hub (M13), not just the model client.
+  "huggingface_hub>=1.0,<2",
+  # Quill's data stack — neither is a smolagents dependency, so both are added explicitly.
+  # Pillow ships with the data/vision stack; it is what decodes a chart PNG to a PIL image for
+  # run(images=[...]) — no extra needed for image INPUT.
+  "pandas>=2.2.3",
+  "matplotlib",
+  # NEW (M12): the BM25 retrieval lib for the RetrieverTool's knowledge base (agentic RAG). We use
+  # rank-bm25 directly — lexical, zero model, zero inference cost, deterministic — and DELIBERATELY
+  # avoid the official RAG example's langchain_community.BM25Retriever to skip the LangChain
+  # dependency (06 §4). Embeddings (semantic search) are a prod swap, not a required dependency.
+  "rank-bm25",
+  # Floors that match smolagents 1.26.0's extras (pinned for reproducibility).
+  "litellm>=1.60.2",       # M4: the LiteLLM swap backend
+  "openai>=1.58.1",        # M4 (optional): OpenAI-compatible servers
+  "docker>=7.1.0",         # M5: Docker SDK used by DockerExecutor
+  "mcpadapt>=0.1.13",      # M9: the MCP <-> smolagents Tool bridge (from [mcp])
+  "helium",                # M11: browser automation for the vision_browser (from [vision])
+  "selenium",              # M11: the WebDriver helium drives (Chrome) (from [vision])
+  "gradio>=5.14.0",        # M13: the web UI layer (GradioUI / stream_to_gradio) (from [gradio])
+  # M14: the OpenInference instrumentor (from [telemetry]) — SmolagentsInstrumentor().instrument().
+  # Pinned at the 06 §4 floor; the [telemetry] extra also pulls arize-phoenix + opentelemetry-sdk +
+  # opentelemetry-exporter-otlp. (Telemetry semantic conventions evolve — re-verify at build time.)
+  "openinference-instrumentation-smolagents>=0.1.15",
+  # "langfuse",            # OPTIONAL (M14): add for the Langfuse backend (a Langfuse-only setup can
+  #                        #   install openinference-instrumentation-smolagents alone, no arize-phoenix)
+  # M15 (capstone): the E2B cloud microVM SDK — the OPTIONAL Approach-2 backend (Docker is the
+  # default). Pulled in by smolagents[e2b]; pinned here for reproducibility. Needs E2B_API_KEY at run.
+  "e2b-code-interpreter>=1.0.3",
+  # Tests
+  "pytest>=8.1.0",
+]
+
+# The OPTIONAL vision_browser needs a real local Chrome in addition to helium+selenium (install it
+# on the host; it is not a pip package). `uvx` (used to launch the stdio MCP SQLite server,
+# mcp-server-sqlite) ships with `uv` — it is NOT a Python package dependency, so it is not listed
+# here. As of M14 the [telemetry] extra IS pulled in (the OpenTelemetry/OpenInference tracing stack);
+# the eval harness itself needs NO telemetry backend — it scores via Monitor + agent.memory.steps, so
+# `python -m quill.eval.run_evals` runs with no Langfuse/Phoenix account. The repo uses ONE shared
+# venv; each module-NN/ is a self-contained snapshot of code + tests + data. uv.lock is committed at
+# the repo root. The push to the Hub needs HF_TOKEN (.env) — never hard-code it; a pushed agent
+# publishes its tool code, so embed no secret (C7). Telemetry traces also capture prompts AND data
+# (the user's CSV may leave for a cloud backend) — self-host or mask sensitive inputs in production.
+#
+# Pytest config (markers, rootdir, the shared FakeModel/fake_model fixture, and the
+# live/sandbox skip policy) lives at the REPO ROOT (pyproject.toml + conftest.py). We do
+# NOT add a [tool.pytest.ini_options] section here: that would make module-09/ a competing
+# rootdir and stop pytest from discovering the root conftest. Run tests from the repo root.

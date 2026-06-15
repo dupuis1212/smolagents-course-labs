@@ -1,0 +1,52 @@
+[
+  {
+    "id": "top-category-revenue",
+    "question": "Which product category has the highest total net_rev across 2025, and roughly how much?",
+    "dataset": "data/sales.csv",
+    "expected_points": [
+      "Team is the category with the highest total net_rev",
+      "Team's total net_rev is on the order of tens of millions (~24.9M)"
+    ],
+    "min_sources": 0
+  },
+  {
+    "id": "fastest-growth",
+    "question": "Which category grew fastest in net_rev from the first to the last month of 2025?",
+    "dataset": "data/sales.csv",
+    "expected_points": [
+      "Team is the fastest-growing category by net_rev",
+      "The comparison runs from 2025-01 to 2025-12"
+    ],
+    "min_sources": 0
+  },
+  {
+    "id": "net-rev-definition",
+    "question": "What does the net_rev column mean, and what is Team's total net_rev?",
+    "dataset": "data/sales.csv",
+    "expected_points": [
+      "net_rev is net revenue: gross revenue minus refunds",
+      "Team has the highest total net_rev"
+    ],
+    "min_sources": 1
+  },
+  {
+    "id": "region-revenue",
+    "question": "Which region_code contributes the most net_rev, and how does the Free category compare?",
+    "dataset": "data/sales.csv",
+    "expected_points": [
+      "The leading region_code by net_rev is identified",
+      "The Free category contributes zero net_rev"
+    ],
+    "min_sources": 0
+  },
+  {
+    "id": "churn-vs-industry",
+    "question": "Is the average churn_flag in data/sales.csv high versus the typical SaaS industry benchmark? Use the web to find the benchmark.",
+    "dataset": "data/sales.csv",
+    "expected_points": [
+      "The average churn_flag is computed from the data",
+      "It is compared against a cited SaaS industry churn benchmark"
+    ],
+    "min_sources": 1
+  }
+]
